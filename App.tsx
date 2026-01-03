@@ -106,9 +106,13 @@ const App: React.FC = () => {
     setSessions(prev => prev.map(s => s.id === activeSessionId ? { ...s, messages } : s));
     if (dbStatus === 'connected') {
       setIsSyncing(true);
-      supabase.from('chat_sessions').update({ messages }).eq('id', activeSessionId).then(() => {
-        setIsSyncing(false);
-      });
+      supabase.from('chat_sessions')
+        .update({ messages })
+        .eq('id', activeSessionId)
+        .then(({ error: syncError }) => {
+          if (syncError) setDbStatus('offline');
+          setIsSyncing(false);
+        });
     }
   }, [messages, activeSessionId, dbStatus]);
 
@@ -186,7 +190,11 @@ const App: React.FC = () => {
       setSessions(prev => [newSession, ...prev]);
       setActiveSessionId(currentSessionId);
       if (dbStatus === 'connected') {
-        supabase.from('chat_sessions').insert([{ id: currentSessionId, title: sessionTitle, messages: initialMessages }]).catch(() => setDbStatus('offline'));
+        supabase.from('chat_sessions')
+          .insert([{ id: currentSessionId, title: sessionTitle, messages: initialMessages }])
+          .then(({ error: insertError }) => {
+            if (insertError) setDbStatus('offline');
+          });
       }
     }
 
