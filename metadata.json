@@ -1,0 +1,8 @@
+{
+  "name": "Copy of Al-Fiqh Multi-Source Assistant",
+  "description": "Scholarly AI retrieval engine powered by Jamia Binoria, Darul Uloom Karachi, Darul Ifta Deoband, Suffah PK, and Darul Ifta info.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
