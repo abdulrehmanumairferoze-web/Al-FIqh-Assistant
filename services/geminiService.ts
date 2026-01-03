@@ -11,8 +11,10 @@ export const SYSTEM_INSTRUCTION = `You are the "Darul Ifta Multi-Source Assistan
 
 CRITICAL ACCURACY & VERIFICATION PROTOCOLS:
 1. PRE-RESPONSE VERIFICATION: Before generating any sentence, verify it against the search grounding. If a fact is not explicitly in the search result from the domains above, EXCLUDE IT.
-2. VERIFIED FATWA REQUIREMENT: If the search results do NOT contain a relevant fatwa from the authorized domains, you MUST state: "No verified fatwa is available in the authorized archives for this specific inquiry." Do not attempt to summarize external general knowledge.
-3. FATWA ID ACCURACY: You MUST extract and display the correct Fatwa ID/Number. Double-check that the ID belongs to the specific fatwa you are citing. If an ID is missing, use the "Fatwa Title" verbatim. NEVER generate or guess a Fatwa ID.
+2. VERIFIED FATWA REQUIREMENT: If the search results do NOT contain a relevant fatwa from the authorized domains, you MUST state: "No verified fatwa is available in the authorized archives for this specific inquiry."
+3. FATWA ID ACCURACY: You MUST extract and display the correct Fatwa ID/Reference Number. 
+   - CRITICAL: If the search result does not explicitly state a Fatwa number, you MUST say: "Reference Number: Not provided in the source."
+   - NEVER guess or "predict" a Fatwa number.
 4. VERBATIM RECORDS: The "OFFICIAL VERBATIM RECORD" must be a bit-for-bit exact copy of the text found in the search result. No paraphrasing in this section.
 5. DOMAIN MATCHING: Ensure the Institution Name in your record matches the domain of the source (e.g., Darul Ifta Deoband only for darulifta-deoband.com).
 
@@ -21,7 +23,7 @@ OUTPUT FORMAT:
 
 OFFICIAL VERBATIM RECORD:
 [Institution Name]
-Fatwa ID: [Correct ID or Title]
+Reference Number: [Correct ID or "Not provided in the source."]
 [Exact Verbatim Text from Source]`;
 
 async function sleep(ms: number) {
@@ -58,7 +60,7 @@ export class GeminiService {
     while (retries <= maxRetries) {
       try {
         const searchSites = 'site:banuri.edu.pk OR site:darululoomkarachi.edu.pk OR site:darulifta-deoband.com OR site:suffahpk.com OR site:darulifta.info';
-        const enhancedPrompt = `[VERIFY_ONLY_AUTHORIZED_SITES] SITES: ${searchSites} | QUERY: ${prompt}`;
+        const enhancedPrompt = `[ONLY_USE_AUTHORIZED_SITES] SITES: ${searchSites} | USER_QUERY: ${prompt}`;
         
         const config: any = {
           systemInstruction: SYSTEM_INSTRUCTION,
@@ -108,7 +110,7 @@ export class GeminiService {
               if (gChunk.web?.uri && !seenUris.has(gChunk.web.uri)) {
                 seenUris.add(gChunk.web.uri);
                 sources.push({
-                  title: gChunk.web.title || "Official Archive Link",
+                  title: gChunk.web.title || "Authorized Archive Link",
                   uri: gChunk.web.uri
                 });
               }
@@ -123,8 +125,7 @@ export class GeminiService {
       } catch (error: any) {
         if (isQuotaError(error) && retries < maxRetries) {
           retries++;
-          const delay = 1500 * retries;
-          await sleep(delay);
+          await sleep(1500 * retries);
           continue;
         }
         throw error;
@@ -147,7 +148,6 @@ export class GeminiService {
       });
       return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || "";
     } catch (error) {
-      console.error("TTS error:", error);
       return "";
     }
   }
