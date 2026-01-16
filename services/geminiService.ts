@@ -49,7 +49,7 @@ export class GeminiService {
     isThinkingMode: boolean = false,
     image?: { data: string; mimeType: string }
   ): AsyncGenerator<StreamOutput> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
     const modelName = isThinkingMode ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
     
     const recentHistory = history.filter(m => m.id !== 'welcome').slice(-4);
@@ -134,7 +134,7 @@ export class GeminiService {
   }
 
   async generateSpeech(text: string, voiceName: string = 'Kore'): Promise<string> {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || 'FAKE_API_KEY_FOR_DEVELOPMENT' });
     try {
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
